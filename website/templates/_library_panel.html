@@ -1,0 +1,162 @@
+{#
+    The Library tab (Lab 3, Problem 2).
+    F2.1 the two tables, F2.2 add, F2.3 edit (links), F2.4 / F2.5 remove.
+#}
+{% from "_library_macros.html" import book_fields, author_fields, book_thumb, author_thumb %}
+
+<div class="card card-wide">
+
+    <div class="panel-head">
+        <div>
+            <h2 class="panel-title">Library</h2>
+            <p class="panel-sub">
+                {{ books|length }} book{{ "" if books|length == 1 else "s" }}
+                &middot;
+                {{ authors|length }} author{{ "" if authors|length == 1 else "s" }}
+            </p>
+        </div>
+
+        <nav class="tabs tabs-sub" data-tabs="library" data-active="{{ view }}" aria-label="Library sections">
+            <span class="tabs-indicator" aria-hidden="true"></span>
+            <a class="tab" data-tab="books" href="{{ url_for('library') }}"
+               {% if view == "books" %}aria-current="page"{% endif %}>Books</a>
+            <a class="tab" data-tab="authors" href="{{ url_for('library', view='authors') }}"
+               {% if view == "authors" %}aria-current="page"{% endif %}>Authors</a>
+        </nav>
+    </div>
+
+
+    {# ======================= Books ======================= #}
+    <div class="subpanel" data-subpanel="books" {% if view != "books" %}hidden{% endif %}>
+
+        {% if authors %}
+        <details class="add-card" {% if book_errors %}open{% endif %}>
+            <summary class="btn btn-primary">
+                <span class="when-closed">+ Add a book</span>
+                <span class="when-open">Close</span>
+            </summary>
+
+            <form class="entity-form" method="post" action="{{ url_for('add_book') }}"
+                  enctype="multipart/form-data" data-validate="book" novalidate>
+                {{ book_fields(book_form, book_errors, authors) }}
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Add book</button>
+                </div>
+            </form>
+        </details>
+        {% else %}
+        <p class="hint">Every book needs an author. <a href="{{ url_for('library', view='authors') }}">Add an author</a> first.</p>
+        {% endif %}
+
+
+        {% if books %}
+        <div class="table-wrap">
+            <table class="data-table books-table">
+                <thead>
+                    <tr>
+                        <th scope="col"><span class="visually-hidden">Cover</span></th>
+                        <th scope="col">Book</th>
+                        <th scope="col">Price</th>
+                        <th scope="col">Author ID</th>
+                        <th scope="col"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for book in books %}
+                    <tr>
+                        <td class="cell-thumb">{{ book_thumb(book) }}</td>
+                        <td class="cell-main">
+                            <span class="row-title">{{ book.title }}</span>
+                            <span class="row-sub">Book #{{ book.book_id }}</span>
+                        </td>
+                        <td data-label="Price" class="cell-number">{{ "%.2f"|format(book.price) }}</td>
+                        <td data-label="Author ID">
+                            <span class="id-pill">#{{ book.author_id }}</span>
+                            <span class="muted">{{ book.author_name }}</span>
+                        </td>
+                        <td class="cell-actions">
+                            <a class="btn btn-secondary btn-small" href="{{ url_for('edit_book', book_id=book.book_id) }}">Edit</a>
+                            <form method="post" action="{{ url_for('delete_book', book_id=book.book_id) }}"
+                                  data-confirm="Remove the book &ldquo;{{ book.title }}&rdquo;?">
+                                <button type="submit" class="btn btn-danger btn-small">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p class="empty-title">No books yet</p>
+            <p>Books you add will show up here.</p>
+        </div>
+        {% endif %}
+
+    </div>
+
+
+    {# ======================= Authors ======================= #}
+    <div class="subpanel" data-subpanel="authors" {% if view != "authors" %}hidden{% endif %}>
+
+        <details class="add-card" {% if author_errors %}open{% endif %}>
+            <summary class="btn btn-primary">
+                <span class="when-closed">+ Add an author</span>
+                <span class="when-open">Close</span>
+            </summary>
+
+            <form class="entity-form" method="post" action="{{ url_for('add_author') }}"
+                  enctype="multipart/form-data" data-validate="author" novalidate>
+                {{ author_fields(author_form, author_errors) }}
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Add author</button>
+                </div>
+            </form>
+        </details>
+
+
+        {% if authors %}
+        <div class="table-wrap">
+            <table class="data-table authors-table">
+                <thead>
+                    <tr>
+                        <th scope="col"><span class="visually-hidden">Photo</span></th>
+                        <th scope="col">Author</th>
+                        <th scope="col">Author ID</th>
+                        <th scope="col">Country</th>
+                        <th scope="col">Books</th>
+                        <th scope="col"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for author in authors %}
+                    <tr>
+                        <td class="cell-thumb">{{ author_thumb(author) }}</td>
+                        <td class="cell-main"><span class="row-title">{{ author.name }}</span></td>
+                        <td data-label="Author ID"><span class="id-pill">#{{ author.author_id }}</span></td>
+                        <td data-label="Country">{{ author.country }}</td>
+                        <td data-label="Books" class="cell-number">{{ author.book_count }}</td>
+                        <td class="cell-actions">
+                            <a class="btn btn-secondary btn-small" href="{{ url_for('edit_author', author_id=author.author_id) }}">Edit</a>
+                            <form method="post" action="{{ url_for('delete_author', author_id=author.author_id) }}"
+                                  data-confirm="Remove {{ author.name }}?{% if author.book_count %} Their {{ author.book_count }} book{{ '' if author.book_count == 1 else 's' }} will be removed too.{% endif %}">
+                                <button type="submit" class="btn btn-danger btn-small">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p class="empty-title">No authors yet</p>
+            <p>Add an author above, then add their books.</p>
+        </div>
+        {% endif %}
+
+    </div>
+
+</div>

@@ -1,0 +1,120 @@
+{#
+    Pieces shared by the "add" forms (library tab) and the "edit" pages.
+    Every input points at its message with aria-describedby, so the
+    JavaScript (static/library.js) knows where to write it.
+#}
+{% from "_macros.html" import field %}
+
+
+{% macro error_text(id, errors, key) %}
+<p class="error-message{% if errors.get(key) %} visible{% endif %}" id="{{ id }}Error" aria-live="polite">{{ errors.get(key, "") }}</p>
+{% endmacro %}
+
+
+{# Optional image upload with a small preview (bonus). #}
+{% macro image_field(id, name, label, errors, current_url=None, remove_label=None) %}
+<div class="form-group">
+    <label for="{{ id }}">{{ label }} <span class="optional">(optional)</span></label>
+
+    <input
+        type="file"
+        id="{{ id }}"
+        name="{{ name }}"
+        class="file-input"
+        accept="image/png,image/jpeg,image/gif,image/webp"
+        aria-describedby="{{ id }}Error"
+        data-preview="{{ id }}Preview"
+        {% if errors.get(name) %}aria-invalid="true"{% endif %}
+    >
+
+    {{ error_text(id, errors, name) }}
+
+    <div class="image-preview" id="{{ id }}Preview" {% if not current_url %}hidden{% endif %}>
+        <img src="{{ current_url or '' }}" alt="Preview of the {{ label|lower }}">
+
+        {% if current_url and remove_label %}
+        <label class="check-row">
+            <input type="checkbox" name="remove_{{ name }}" value="1">
+            {{ remove_label }}
+        </label>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro book_fields(form, errors, authors, current_cover_url=None) %}
+<div class="form-grid">
+
+    {{ field("bookTitle", "title", "Title", "text", "e.g. Palace Walk", "off", errors, form.get("title", "")) }}
+
+    <div class="form-group">
+        <label for="bookPrice">Price</label>
+        <input
+            type="text"
+            id="bookPrice"
+            name="price"
+            inputmode="decimal"
+            placeholder="e.g. 120.00"
+            autocomplete="off"
+            value="{{ form.get('price', '') }}"
+            aria-describedby="bookPriceError"
+            {% if errors.get("price") %}aria-invalid="true"{% endif %}
+        >
+        {{ error_text("bookPrice", errors, "price") }}
+    </div>
+
+    <div class="form-group">
+        <label for="bookAuthor">Author</label>
+        <select
+            id="bookAuthor"
+            name="author_id"
+            aria-describedby="bookAuthorError"
+            {% if errors.get("author_id") %}aria-invalid="true"{% endif %}
+        >
+            <option value="">Choose an author</option>
+            {% for author in authors %}
+            <option value="{{ author.author_id }}" {% if form.get("author_id", "")|string == author.author_id|string %}selected{% endif %}>
+                {{ author.name }} (#{{ author.author_id }})
+            </option>
+            {% endfor %}
+        </select>
+        {{ error_text("bookAuthor", errors, "author_id") }}
+    </div>
+
+    {{ image_field("bookCover", "cover", "Cover", errors, current_cover_url, "Remove the current cover") }}
+
+</div>
+{% endmacro %}
+
+
+{% macro author_fields(form, errors, current_photo_url=None) %}
+<div class="form-grid">
+
+    {{ field("authorName", "name", "Name", "text", "e.g. Naguib Mahfouz", "off", errors, form.get("name", "")) }}
+    {{ field("authorCountry", "country", "Country", "text", "e.g. Egypt", "off", errors, form.get("country", "")) }}
+
+    {{ image_field("authorPhoto", "photo", "Photo", errors, current_photo_url, "Remove the current photo") }}
+
+</div>
+{% endmacro %}
+
+
+{# Small picture in the tables: the uploaded image, or a coloured placeholder. #}
+{% macro book_thumb(book) %}
+{% if book.cover %}
+<img class="thumb thumb-book" src="{{ url_for('static', filename='uploads/books/' ~ book.cover) }}" alt="Cover of {{ book.title }}">
+{% else %}
+<span class="thumb thumb-book tone-{{ book.book_id % 6 }}" aria-hidden="true">{{ book.title[:1]|upper }}</span>
+{% endif %}
+{% endmacro %}
+
+
+{% macro author_thumb(author) %}
+{% if author.photo %}
+<img class="thumb thumb-author" src="{{ url_for('static', filename='uploads/authors/' ~ author.photo) }}" alt="Photo of {{ author.name }}">
+{% else %}
+{% set words = author.name.split() %}
+<span class="thumb thumb-author tone-{{ author.author_id % 6 }}" aria-hidden="true">{{ (words[0][:1] ~ (words[-1][:1] if words|length > 1 else ""))|upper }}</span>
+{% endif %}
+{% endmacro %}

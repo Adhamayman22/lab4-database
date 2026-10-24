@@ -1,0 +1,31 @@
+{% extends "_app_layout.html" %}
+{% from "_library_macros.html" import book_fields %}
+
+{% block title %}Edit book{% endblock %}
+
+{% block content %}
+<section class="card card-wide edit-card">
+
+    <a class="back-link" href="{{ url_for('library') }}">&larr; Back to books</a>
+
+    <h2 class="panel-title">Edit book <span class="id-pill">#{{ book.book_id }}</span></h2>
+    <p class="panel-sub">Change the title, the price, the author or the cover.</p>
+
+    <form class="entity-form" method="post" action="{{ url_for('edit_book', book_id=book.book_id) }}"
+          enctype="multipart/form-data" data-validate="book" novalidate>
+
+        {{ book_fields(form, errors, authors,
+                       url_for('static', filename='uploads/books/' ~ book.cover) if book.cover else None) }}
+
+        <div class="form-actions">
+            <a class="btn btn-outline" href="{{ url_for('library') }}">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+    </form>
+
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='library.js') }}"></script>
+{% endblock %}

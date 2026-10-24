@@ -1,0 +1,1279 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ---------- Colours and sizes (change them here only) ---------- */
+
+:root {
+    color-scheme: light dark;
+
+    --bg-glow-1: rgba(204, 224, 216, 0.65);
+    --bg-glow-2: rgba(224, 218, 205, 0.55);
+    --bg-base-1: #f5f7f5;
+    --bg-base-2: #f8f7f4;
+    --bg-base-3: #f0f4f1;
+
+    --card-background: #ffffff;
+    --card-border: rgba(227, 231, 235, 0.8);
+    --text-primary: #1f2933;
+    --text-secondary: #6b7280;
+    --placeholder: #9ca3af;
+
+    --border: #e3e7eb;
+    --border-hover: #cbd2d8;
+    --input-background: #f9fafb;
+    --input-focus-background: #ffffff;
+
+    --accent: #527a73;
+    --accent-hover: #42665f;
+    --accent-ring: rgba(82, 122, 115, 0.18);
+    --on-accent: #ffffff;
+
+    --error: #b94a48;
+    --error-ring: rgba(185, 74, 72, 0.15);
+    --error-background: #fdf1f0;
+
+    --shadow: 0 20px 50px rgba(31, 41, 51, 0.08);
+    --radius: 10px;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Dark mode follows the operating system setting (bonus). */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-glow-1: rgba(82, 122, 115, 0.18);
+        --bg-glow-2: rgba(120, 105, 80, 0.14);
+        --bg-base-1: #14181b;
+        --bg-base-2: #171b1e;
+        --bg-base-3: #121618;
+
+        --card-background: #1c2226;
+        --card-border: rgba(255, 255, 255, 0.06);
+        --text-primary: #e6eaed;
+        --text-secondary: #9aa5ae;
+        --placeholder: #6b7680;
+
+        --border: #2c353b;
+        --border-hover: #3a454c;
+        --input-background: #161b1f;
+        --input-focus-background: #1a2024;
+
+        --accent: #6f9c94;
+        --accent-hover: #82aea6;
+        --accent-ring: rgba(111, 156, 148, 0.25);
+        --on-accent: #0f1513;
+
+        --error: #e57f7b;
+        --error-ring: rgba(229, 127, 123, 0.2);
+        --error-background: rgba(229, 127, 123, 0.1);
+
+        --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+    }
+}
+
+/* ---------- Page ---------- */
+
+body {
+    min-height: 100vh;
+    font-family: var(--font);
+    color: var(--text-primary);
+    background-color: var(--bg-base-2);
+    background-image:
+        radial-gradient(ellipse at 15% 15%, var(--bg-glow-1) 0%, transparent 45%),
+        radial-gradient(ellipse at 85% 80%, var(--bg-glow-2) 0%, transparent 45%),
+        linear-gradient(135deg, var(--bg-base-1) 0%, var(--bg-base-2) 50%, var(--bg-base-3) 100%);
+    background-attachment: fixed;
+}
+
+/* Login and register pages: one card in the middle of the screen. */
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+}
+
+.card {
+    width: 100%;
+    max-width: 450px;
+    background: var(--card-background);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 42px;
+    box-shadow: var(--shadow);
+}
+
+.card h1 {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 32px;
+}
+
+/* ---------- Forms ---------- */
+
+.form-group {
+    margin-bottom: 21px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-group input {
+    width: 100%;
+    height: 48px;
+    padding: 0 15px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--input-background);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.form-group input::placeholder {
+    color: var(--placeholder);
+}
+
+.form-group input:hover {
+    border-color: var(--border-hover);
+}
+
+.form-group input:focus {
+    background: var(--input-focus-background);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+/* A field with an error gets a red border, not only a red text. */
+.form-group input[aria-invalid="true"] {
+    border-color: var(--error);
+}
+
+.form-group input[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 3px var(--error-ring);
+}
+
+.error-message {
+    display: none;
+    margin-top: 6px;
+    color: var(--error);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.error-message.visible {
+    display: block;
+}
+
+/* A message for the whole form (e.g. "Invalid email or password"). */
+.form-alert {
+    margin-bottom: 20px;
+    padding: 12px 14px;
+    border: 1px solid var(--error);
+    border-radius: var(--radius);
+    background: var(--error-background);
+    color: var(--error);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    padding: 0 18px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.15s ease,
+        box-shadow 0.2s ease;
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn:focus-visible,
+a:focus-visible {
+    outline: 3px solid var(--accent-ring);
+    outline-offset: 2px;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 8px 18px var(--accent-ring);
+}
+
+.btn-block {
+    width: 100%;
+    height: 49px;
+    margin-top: 5px;
+}
+
+/* ---------- Link under the form ---------- */
+
+.switch-link {
+    margin-top: 25px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.switch-link a {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.switch-link a:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+/* ---------- Phone-sized screens (about 360 px) ---------- */
+
+@media (max-width: 480px) {
+    .auth-page {
+        padding: 24px 16px;
+        align-items: flex-start;
+    }
+
+    .card {
+        padding: 28px 22px;
+        border-radius: 16px;
+    }
+
+    .card h1 {
+        font-size: 26px;
+    }
+
+    .subtitle {
+        margin-bottom: 24px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+    }
+}
+
+/* =============================================================
+   To-do page
+   ============================================================= */
+
+.app-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+}
+
+.card-wide {
+    max-width: 680px;
+    padding: 32px;
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.app-header h1 {
+    margin-bottom: 0;
+}
+
+.user-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Text inputs outside .form-group (add box and list items) */
+.text-input {
+    flex: 1;
+    min-width: 0;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--input-background);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.text-input::placeholder {
+    color: var(--placeholder);
+}
+
+.text-input:hover {
+    border-color: var(--border-hover);
+}
+
+.text-input:focus {
+    background: var(--input-focus-background);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.text-input[aria-invalid="true"] {
+    border-color: var(--error);
+}
+
+.text-input[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 3px var(--error-ring);
+}
+
+.inline-form {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.add-box {
+    margin-bottom: 20px;
+}
+
+.count {
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+/* More buttons */
+
+.btn-small {
+    height: 38px;
+    padding: 0 14px;
+    font-size: 14px;
+}
+
+.btn-outline {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+.btn-outline:hover {
+    border-color: var(--border-hover);
+    background: var(--input-background);
+}
+
+.btn-secondary {
+    background: var(--input-background);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.btn-danger {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--error);
+}
+
+.btn-danger:hover {
+    background: var(--error-background);
+    border-color: var(--error);
+}
+
+/* List */
+
+.todo-list {
+    list-style: none;
+}
+
+.todo-item {
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    transition: background-color 0.2s ease;
+}
+
+.todo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.check-btn {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border: 2px solid var(--border-hover);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--on-accent);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.check-btn:hover {
+    border-color: var(--accent);
+}
+
+.check-btn:focus-visible {
+    outline: 3px solid var(--accent-ring);
+    outline-offset: 2px;
+}
+
+/* Done to-dos: green circle with a tick, crossed-out grey title */
+.todo-item.done {
+    background: var(--input-background);
+}
+
+.todo-item.done .check-btn {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.todo-item.done .text-input {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+}
+
+.todo-item .error-message {
+    margin-left: 40px;
+}
+
+/* Empty list */
+
+.empty-state {
+    padding: 36px 20px;
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.empty-title {
+    margin-bottom: 4px;
+    color: var(--text-primary);
+    font-size: 17px;
+    font-weight: 600;
+}
+
+/* Error page */
+
+.error-card {
+    text-align: center;
+}
+
+.error-card .subtitle {
+    margin-bottom: 24px;
+}
+
+.error-card a.btn {
+    text-decoration: none;
+}
+
+.error-code {
+    margin-bottom: 4px;
+    color: var(--accent);
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+@media (max-width: 480px) {
+    .app-page {
+        padding: 24px 16px;
+    }
+
+    .card-wide {
+        padding: 22px 16px;
+    }
+
+    .app-header {
+        margin-bottom: 18px;
+    }
+
+    /* Line 1: circle + title + Save. Line 2: Delete. */
+    .todo-row {
+        flex-wrap: wrap;
+    }
+
+    .edit-form {
+        flex: 1 1 calc(100% - 42px);
+    }
+
+    .delete-form {
+        margin-left: 40px;
+    }
+
+    .todo-item .error-message {
+        margin-left: 0;
+    }
+}
+
+/* Search and filter */
+
+.filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.search-form {
+    flex: 1 1 220px;
+}
+
+.segmented {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--input-background);
+}
+
+.seg {
+    padding: 7px 14px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.seg:hover {
+    color: var(--text-primary);
+}
+
+.seg.active {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.empty-state a {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+@media (max-width: 480px) {
+    .segmented {
+        width: 100%;
+    }
+
+    .seg {
+        flex: 1;
+        text-align: center;
+    }
+}
+
+/* =============================================================
+   Lab 3: app shell (top bar + tabs) and the library
+   ============================================================= */
+
+body {
+    overflow-x: clip; /* the sliding panels never make the page scroll sideways */
+}
+
+a.btn {
+    text-decoration: none;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.app-shell {
+    width: 100%;
+    max-width: 920px;
+}
+
+.app-shell .card-wide {
+    max-width: none;
+}
+
+/* ---------- Top bar ---------- */
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    text-decoration: none;
+}
+
+.brand-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: var(--on-accent);
+    box-shadow: 0 6px 16px var(--accent-ring);
+}
+
+.avatar {
+    display: inline-grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--card-background);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* ---------- Tabs with a sliding pill ---------- */
+
+.tabs {
+    position: relative;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    padding: 5px;
+    margin-bottom: 18px;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    background: var(--card-background);
+    box-shadow: var(--shadow);
+}
+
+/* The pill sits under the active tab; changing data-active slides it. */
+.tabs-indicator {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: 5px;
+    width: calc((100% - 10px) / 2);
+    border-radius: 12px;
+    background: var(--accent);
+    box-shadow: 0 6px 16px var(--accent-ring);
+    transition: transform 0.38s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.tabs[data-active="library"] .tabs-indicator,
+.tabs[data-active="authors"] .tabs-indicator {
+    transform: translateX(100%);
+}
+
+.tab {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 46px;
+    border-radius: 12px;
+    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    /* the text changes colour while the pill arrives, not before it */
+    transition: color 0.3s ease 0.1s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tab:hover {
+    color: var(--text-primary);
+}
+
+.tab[aria-current="page"] {
+    color: var(--on-accent);
+}
+
+.tab:focus-visible {
+    outline: 3px solid var(--accent-ring);
+    outline-offset: 2px;
+}
+
+.tab-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Smaller tabs inside the library card (Books / Authors) */
+.tabs-sub {
+    min-width: 230px;
+    padding: 4px;
+    margin-bottom: 0;
+    border-color: var(--border);
+    border-radius: 12px;
+    background: var(--input-background);
+    box-shadow: none;
+}
+
+.tabs-sub .tabs-indicator {
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc((100% - 8px) / 2);
+    border-radius: 9px;
+    box-shadow: none;
+}
+
+.tabs-sub .tab {
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 9px;
+    font-size: 14px;
+}
+
+/* ---------- Panels: the new one slides in from its side ---------- */
+
+@keyframes enter-from-right {
+    from { opacity: 0; transform: translateX(28px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes enter-from-left {
+    from { opacity: 0; transform: translateX(-28px); }
+    to   { opacity: 1; transform: none; }
+}
+
+.enter-forward {
+    animation: enter-from-right 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.enter-back {
+    animation: enter-from-left 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+.panel-sub {
+    margin-top: 4px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* ---------- Toast after an action ("Added ...") ---------- */
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    z-index: 10;
+    max-width: calc(100% - 32px);
+    padding: 12px 18px;
+    border-radius: 12px;
+    background: var(--text-primary);
+    color: var(--card-background);
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    transform: translateX(-50%);
+    pointer-events: none;
+    animation: toast 4.5s ease forwards;
+}
+
+@keyframes toast {
+    0%   { opacity: 0; transform: translate(-50%, 12px); }
+    8%   { opacity: 1; transform: translate(-50%, 0); }
+    85%  { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, 6px); visibility: hidden; }
+}
+
+@keyframes toast-fade {
+    0%, 85% { opacity: 1; }
+    100%    { opacity: 0; visibility: hidden; }
+}
+
+/* ---------- Add / edit forms ---------- */
+
+.add-card {
+    margin-bottom: 20px;
+}
+
+.add-card > summary {
+    list-style: none;
+}
+
+.add-card > summary::-webkit-details-marker {
+    display: none;
+}
+
+.add-card .when-open,
+.add-card[open] .when-closed {
+    display: none;
+}
+
+.add-card[open] .when-open {
+    display: inline;
+}
+
+.add-card[open] > summary {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-primary);
+    box-shadow: none;
+}
+
+.entity-form {
+    margin-top: 16px;
+    padding: 20px 20px 4px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+}
+
+.edit-card .entity-form {
+    margin-top: 24px;
+    padding: 0;
+    border: 0;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.optional {
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.form-group select {
+    width: 100%;
+    height: 48px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--input-background);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.form-group select:hover {
+    border-color: var(--border-hover);
+}
+
+.form-group select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.form-group select[aria-invalid="true"] {
+    border-color: var(--error);
+}
+
+.form-group input.file-input {
+    height: auto;
+    padding: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.file-input::file-selector-button {
+    margin-right: 12px;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card-background);
+    color: var(--text-primary);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.image-preview {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+}
+
+.image-preview[hidden] {
+    display: none;
+}
+
+.image-preview img {
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.form-group label.check-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0;
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.form-group .check-row input {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    accent-color: var(--accent);
+}
+
+.hint {
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    color: var(--text-secondary);
+}
+
+.hint a,
+.back-link {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 16px;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+/* ---------- Tables ---------- */
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.data-table th {
+    padding: 0 12px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.data-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.data-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.data-table tbody tr:hover {
+    background: var(--input-background);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.cell-thumb {
+    width: 64px;
+}
+
+.cell-number {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.row-title {
+    display: block;
+    font-weight: 600;
+}
+
+.row-sub {
+    display: block;
+    margin-top: 2px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.muted {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.id-pill {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--input-background);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.cell-actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.cell-actions > * {
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+.cell-actions form {
+    margin-left: 8px;
+}
+
+/* Covers and photos, or a coloured placeholder with a letter */
+.thumb {
+    display: grid;
+    place-items: center;
+    background: var(--input-background);
+    color: #ffffff;
+    font-weight: 700;
+    object-fit: cover;
+}
+
+.thumb-book {
+    width: 44px;
+    height: 62px;
+    border-radius: 6px;
+    font-size: 20px;
+    box-shadow:
+        inset -3px 0 0 rgba(0, 0, 0, 0.14),
+        0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.thumb-author {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 15px;
+}
+
+.tone-0 { background: linear-gradient(135deg, #5f8a82, #2f4f4a); }
+.tone-1 { background: linear-gradient(135deg, #c08a58, #7a4f2b); }
+.tone-2 { background: linear-gradient(135deg, #6d80b8, #36447a); }
+.tone-3 { background: linear-gradient(135deg, #b8677c, #723447); }
+.tone-4 { background: linear-gradient(135deg, #7f9f5e, #46612d); }
+.tone-5 { background: linear-gradient(135deg, #8b6eb8, #4d3a74); }
+
+/* ---------- Phones: each table row becomes a small card ---------- */
+
+@media (max-width: 640px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tabs-sub {
+        width: 100%;
+    }
+
+    .data-table thead {
+        display: none;
+    }
+
+    .data-table,
+    .data-table tbody {
+        display: block;
+    }
+
+    .data-table tr {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr);
+        column-gap: 14px;
+        row-gap: 4px;
+        margin-bottom: 10px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+    }
+
+    .books-table tr {
+        grid-template-rows: repeat(4, auto);
+    }
+
+    .authors-table tr {
+        grid-template-rows: repeat(5, auto);
+    }
+
+    .data-table td {
+        display: block;
+        grid-column: 2;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    .data-table td.cell-thumb {
+        grid-column: 1;
+        grid-row: 1 / -1;
+        width: auto;
+    }
+
+    .data-table td[data-label]::before {
+        content: attr(data-label) ": ";
+        color: var(--text-secondary);
+        font-size: 13px;
+    }
+
+    .data-table tbody tr:hover {
+        background: transparent;
+    }
+
+    /* the author's name goes on its own line under the id */
+    .data-table td .muted {
+        display: block;
+        margin-top: 2px;
+    }
+
+    .cell-actions {
+        margin-top: 8px;
+        text-align: left;
+    }
+}
+
+@media (max-width: 480px) {
+    .brand-name {
+        display: none;
+    }
+
+    .tab {
+        height: 42px;
+    }
+
+    .entity-form {
+        padding: 16px 14px 2px;
+    }
+
+    .form-actions .btn {
+        flex: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .enter-forward,
+    .enter-back {
+        animation: none;
+    }
+
+    .toast {
+        animation-name: toast-fade;
+    }
+}
