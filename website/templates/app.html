@@ -1,0 +1,26 @@
+{% extends "_app_layout.html" %}
+
+{% block title %}{{ "Library" if active == "library" else "My To-Dos" }}{% endblock %}
+
+{% block content %}
+{# Both tabs are in the page; only the active one is shown. #}
+<div class="panels">
+
+    <section class="panel" id="panel-todos" data-panel="todos" aria-label="To-do list"
+             {% if active != "todos" %}hidden{% endif %}>
+        {% include "_todos_panel.html" %}
+    </section>
+
+    <section class="panel" id="panel-library" data-panel="library" aria-label="Library"
+             {% if active != "library" %}hidden{% endif %}>
+        {% include "_library_panel.html" %}
+    </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='todos.js') }}"></script>
+<script src="{{ url_for('static', filename='library.js') }}"></script>
+<script src="{{ url_for('static', filename='tabs.js') }}"></script>
+{% endblock %}

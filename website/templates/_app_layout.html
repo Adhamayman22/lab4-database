@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{#
+    Every page after login: the top bar (name + log out) and the two tabs.
+    On the main page tabs.js switches the tabs without reloading;
+    on other pages (edit forms) the tabs are plain links.
+#}
+
+{% block body %}
+<main class="app-page">
+
+    <div class="app-shell">
+
+        <header class="topbar">
+            <a class="brand" href="{{ url_for('todos') }}">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="brand-name">Workspace</span>
+            </a>
+
+            <div class="user-box">
+                <span class="avatar" aria-hidden="true">{{ name[:1]|upper }}</span>
+                <span class="user-name">Hi, {{ name }}</span>
+
+                <form method="post" action="{{ url_for('logout') }}">
+                    <button type="submit" class="btn btn-outline btn-small">Log out</button>
+                </form>
+            </div>
+        </header>
+
+
+        <nav class="tabs" data-tabs="main" data-active="{{ active }}" aria-label="Sections">
+            <span class="tabs-indicator" aria-hidden="true"></span>
+
+            <a class="tab" data-tab="todos" data-title="My To-Dos" href="{{ todos_href }}"
+               {% if active == "todos" %}aria-current="page"{% endif %}>
+                <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 12.3l2.6 2.6L16.2 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>To-Do</span>
+            </a>
+
+            <a class="tab" data-tab="library" data-title="Library" href="{{ library_href }}"
+               {% if active == "library" %}aria-current="page"{% endif %}>
+                <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z M13 4h5.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H13z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                <span>Library</span>
+            </a>
+        </nav>
+
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <p class="toast" role="status">{{ messages|join(" · ") }}</p>
+            {% endif %}
+        {% endwith %}
+
+
+        {% block content %}{% endblock %}
+
+    </div>
+
+</main>
+{% endblock %}
