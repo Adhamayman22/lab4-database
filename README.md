@@ -158,7 +158,8 @@ When the server finds an error it shows the same form again with the messages an
 | R4 to R7 | Add, edit, mark done / not done, delete a to-do (with "are you sure?"). |
 | R8 | The same checks in JavaScript and on the server, with the exact messages of the lab. |
 | R9 | bcrypt hashes (cost 12); SQL always with parameters; `user_id` always from the session (`AND user_id = %s`). |
-| R10 | One consistent style, works at 360 px wide, clear messages, empty states, dark mode that follows the system. |
+| R10 | One consistent style, works at 360 px wide, clear messages, empty states. |
+| Extra | Light / dark mode button (sun / moon) in the top bar, and in the corner of the login and register pages. The choice is remembered in the browser; with no choice the site follows the system setting. |
 | Lab 2 bonus | Filters (All / Open / Done), a search box and a counter of open to-dos. |
 
 The library is shared by all logged-in users (the `book` and `author` tables have no `user_id`), while the to-do list stays private to each user.
