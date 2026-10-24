@@ -40,9 +40,14 @@
     --font: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-/* Dark mode follows the operating system setting (bonus). */
+/*
+   Dark colours. They are used when:
+   - the user picked dark with the sun / moon button (data-theme="dark" on <html>), or
+   - the user picked nothing and the operating system is in dark mode.
+   Picking light (data-theme="light") keeps the light colours above.
+*/
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
         --bg-glow-1: rgba(82, 122, 115, 0.18);
         --bg-glow-2: rgba(120, 105, 80, 0.14);
         --bg-base-1: #14181b;
@@ -71,6 +76,43 @@
 
         --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
     }
+}
+
+/* The same dark colours when the user picked dark on a light system. */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --bg-glow-1: rgba(82, 122, 115, 0.18);
+    --bg-glow-2: rgba(120, 105, 80, 0.14);
+    --bg-base-1: #14181b;
+    --bg-base-2: #171b1e;
+    --bg-base-3: #121618;
+
+    --card-background: #1c2226;
+    --card-border: rgba(255, 255, 255, 0.06);
+    --text-primary: #e6eaed;
+    --text-secondary: #9aa5ae;
+    --placeholder: #6b7680;
+
+    --border: #2c353b;
+    --border-hover: #3a454c;
+    --input-background: #161b1f;
+    --input-focus-background: #1a2024;
+
+    --accent: #6f9c94;
+    --accent-hover: #82aea6;
+    --accent-ring: rgba(111, 156, 148, 0.25);
+    --on-accent: #0f1513;
+
+    --error: #e57f7b;
+    --error-ring: rgba(229, 127, 123, 0.2);
+    --error-background: rgba(229, 127, 123, 0.1);
+
+    --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme="light"] {
+    color-scheme: light;
 }
 
 /* ---------- Page ---------- */
@@ -1275,5 +1317,106 @@ a.btn {
 
     .toast {
         animation-name: toast-fade;
+    }
+}
+
+/* =============================================================
+   Light / dark button
+   ============================================================= */
+
+.theme-toggle {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--card-background);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.theme-toggle[hidden] {
+    display: none;
+}
+
+.theme-toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.theme-toggle:active {
+    transform: scale(0.92);
+}
+
+.theme-toggle:focus-visible {
+    outline: 3px solid var(--accent-ring);
+    outline-offset: 2px;
+}
+
+/* Both icons sit on top of each other; one turns away while the other turns in.
+   Dark mode shows the sun (press it to go light), light mode shows the moon. */
+.theme-toggle svg {
+    grid-area: 1 / 1;
+    width: 18px;
+    height: 18px;
+    transition:
+        transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.3s ease;
+}
+
+.theme-toggle .icon-sun,
+.theme-toggle[data-current="dark"] .icon-moon {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+}
+
+.theme-toggle[data-current="dark"] .icon-sun {
+    opacity: 1;
+    transform: none;
+}
+
+/* On the login / register / error pages: in the top right corner */
+.theme-toggle-floating {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 5;
+    box-shadow: var(--shadow);
+}
+
+/* For a moment after pressing the button, every colour fades to the new one. */
+.theme-changing,
+.theme-changing *,
+.theme-changing *::before,
+.theme-changing *::after {
+    transition:
+        background-color 0.35s ease,
+        color 0.35s ease,
+        border-color 0.35s ease,
+        box-shadow 0.35s ease !important;
+}
+
+/* ...but the sun / moon keep their turning animation */
+.theme-changing .theme-toggle svg {
+    transition:
+        transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.3s ease !important;
+}
+
+@media (max-width: 480px) {
+    /* leave room for the corner button above the login / register card */
+    .auth-page {
+        padding-top: 68px;
+    }
+
+    .user-box {
+        gap: 8px;
     }
 }

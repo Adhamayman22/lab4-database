@@ -6,6 +6,9 @@
     on other pages (edit forms) the tabs are plain links.
 #}
 
+{# Here the light / dark button lives in the top bar, not in the corner. #}
+{% block theme_toggle %}{% endblock %}
+
 {% block body %}
 <main class="app-page">
 
@@ -20,6 +23,7 @@
             </a>
 
             <div class="user-box">
+                {% include "_theme_toggle.html" %}
                 <span class="avatar" aria-hidden="true">{{ name[:1]|upper }}</span>
                 <span class="user-name">Hi, {{ name }}</span>
 
