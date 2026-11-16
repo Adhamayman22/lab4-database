@@ -117,7 +117,7 @@ LOAN      (loan_id, book_id, member_id, loan_date, return_date)
 
 ## 6. The website: the new pages
 
-After logging in, the bar at the top has three tabs: **To-Do** (Lab 2), **Library** (Lab 3) and **Explore** (Lab 4). Explore has a small menu with one page per requirement. Every page shows its result and has a **Show the SQL** button with the exact query it ran. The same queries are in [problem2_Queries.sql](problem2_Queries.sql).
+After logging in, the bar at the top has three tabs: **To-Do** (Lab 2), **Library** (Lab 3) and **Explore** (Lab 4). Explore has a small menu with one page per requirement. The queries the pages run are in [problem2_Queries.sql](problem2_Queries.sql).
 
 | # | Page | SQL | What it shows |
 |---|------|-----|---------------|

@@ -19,26 +19,16 @@
 {% endmacro %}
 
 
-{% macro sql_box(text) %}
-<details class="sql-box">
-    <summary>Show the SQL</summary>
-    <pre><code>{{ text }}</code></pre>
-</details>
-{% endmacro %}
-
-
 {% macro result_block(block) %}
 <section class="result-block">
     <header class="result-head">
         <span class="req-badge">{{ block.code }}</span>
         <h3 class="result-title">{{ block.title }}</h3>
-        <p class="result-text">{{ block.text }}</p>
     </header>
 
     {% if not block.rows %}
     <div class="empty-state">
         <p class="empty-title">No rows</p>
-        <p>The query returned an empty result.</p>
     </div>
 
     {% elif block.style == "stats" %}
@@ -80,8 +70,6 @@
     </div>
     <p class="row-count">{{ block.rows|length }} row{{ "" if block.rows|length == 1 else "s" }}</p>
     {% endif %}
-
-    {{ sql_box(block.sql) }}
 </section>
 {% endmacro %}
 
@@ -92,7 +80,6 @@
     <div class="panel-head">
         <div>
             <h2 class="panel-title">Explore the library</h2>
-            <p class="panel-sub">Search, reports and loans: every page is one SQL query on the library database.</p>
         </div>
     </div>
 
@@ -113,7 +100,6 @@
         <header class="result-head">
             <span class="req-badge">F2.1</span>
             <h3 class="result-title">Search books</h3>
-            <p class="result-text">A title keyword (LIKE), a price range (BETWEEN, both ends included) and a category. Leave a field empty to ignore it. The cheapest books come first.</p>
         </header>
 
         <form class="entity-form search-books" method="get" action="{{ url_for('explore', section='search') }}" novalidate>
@@ -198,9 +184,6 @@
             </div>
             {% endif %}
         {% endif %}
-
-        {{ sql_box(search_sql) }}
-        <p class="sql-note">Bonus: this query is a <strong>prepared statement</strong>. The SQL with its <code>?</code> placeholders is sent to MySQL first, then the values you typed are sent separately, so they are never part of the SQL text.</p>
     </section>
 
     {% else %}
