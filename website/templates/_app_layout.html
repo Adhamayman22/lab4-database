@@ -34,7 +34,7 @@
         </header>
 
 
-        <nav class="tabs" data-tabs="main" data-active="{{ active }}" aria-label="Sections">
+        <nav class="tabs tabs-3" data-tabs="main" data-active="{{ active }}" aria-label="Sections">
             <span class="tabs-indicator" aria-hidden="true"></span>
 
             <a class="tab" data-tab="todos" data-title="My To-Dos" href="{{ todos_href }}"
@@ -47,6 +47,13 @@
                {% if active == "library" %}aria-current="page"{% endif %}>
                 <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z M13 4h5.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H13z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
                 <span>Library</span>
+            </a>
+
+            {# Lab 4: search and reports. A separate page, so this tab is a normal link. #}
+            <a class="tab" data-tab="explore" data-title="Explore" href="{{ explore_href }}"
+               {% if active == "explore" %}aria-current="page"{% endif %}>
+                <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                <span>Explore</span>
             </a>
         </nav>
 

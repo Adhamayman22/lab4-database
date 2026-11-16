@@ -3,3 +3,4 @@ PyMySQL
 bcrypt
 python-dotenv
 cryptography
+mysql-connector-python

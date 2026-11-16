@@ -38,8 +38,22 @@ const RULES = {
             if (Number(price) >= 100000000) return "Price is too large (99999999.99 at most)";
             return "";
         },
+        publish_year: function (input) {
+            const year = input.value.trim();
+            const thisYear = new Date().getFullYear();
+            if (year === "") return "Year is required";
+            if (!/^\d{1,4}$/.test(year)) return "Enter a valid year, like 1956";
+            if (Number(year) < 1000 || Number(year) > thisYear) return "Year must be between 1000 and " + thisYear;
+            return "";
+        },
         author_id: function (input) {
             return input.value === "" ? "Author is required" : "";
+        },
+        publisher_id: function (input) {
+            return input.value === "" ? "Publisher is required" : "";
+        },
+        category_id: function (input) {
+            return input.value === "" ? "Category is required" : "";
         },
         cover: checkImage,
     },

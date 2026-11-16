@@ -96,6 +96,11 @@ if (mainTabs && panels) {
             return;
         }
 
+        // A tab with no panel in this page (Explore) is a normal link.
+        if (!panels.querySelector('[data-panel="' + tab.dataset.tab + '"]')) {
+            return;
+        }
+
         event.preventDefault();
         showMainTab(tab.dataset.tab, true);
     });

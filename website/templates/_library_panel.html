@@ -38,7 +38,7 @@
 
             <form class="entity-form" method="post" action="{{ url_for('add_book') }}"
                   enctype="multipart/form-data" data-validate="book" novalidate>
-                {{ book_fields(book_form, book_errors, authors) }}
+                {{ book_fields(book_form, book_errors, authors, publishers, categories) }}
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Add book</button>
@@ -68,7 +68,7 @@
                         <td class="cell-thumb">{{ book_thumb(book) }}</td>
                         <td class="cell-main">
                             <span class="row-title">{{ book.title }}</span>
-                            <span class="row-sub">Book #{{ book.book_id }}</span>
+                            <span class="row-sub">Book #{{ book.book_id }} &middot; {{ book.publish_year }}</span>
                         </td>
                         <td data-label="Price" class="cell-number">{{ "%.2f"|format(book.price) }}</td>
                         <td data-label="Author ID">

@@ -43,10 +43,46 @@
 {% endmacro %}
 
 
-{% macro book_fields(form, errors, authors, current_cover_url=None) %}
+{# A list of existing rows (publisher, category): value = id, text = name. #}
+{% macro choice_field(id, name, label, placeholder, rows, key, errors, selected) %}
+<div class="form-group">
+    <label for="{{ id }}">{{ label }}</label>
+    <select
+        id="{{ id }}"
+        name="{{ name }}"
+        aria-describedby="{{ id }}Error"
+        {% if errors.get(name) %}aria-invalid="true"{% endif %}
+    >
+        <option value="">{{ placeholder }}</option>
+        {% for row in rows %}
+        <option value="{{ row[key] }}" {% if selected|string == row[key]|string %}selected{% endif %}>{{ row.name }}</option>
+        {% endfor %}
+    </select>
+    {{ error_text(id, errors, name) }}
+</div>
+{% endmacro %}
+
+
+{% macro book_fields(form, errors, authors, publishers, categories, current_cover_url=None) %}
 <div class="form-grid">
 
     {{ field("bookTitle", "title", "Title", "text", "e.g. Palace Walk", "off", errors, form.get("title", "")) }}
+
+    <div class="form-group">
+        <label for="bookYear">Publish year</label>
+        <input
+            type="text"
+            id="bookYear"
+            name="publish_year"
+            inputmode="numeric"
+            placeholder="e.g. 1956"
+            autocomplete="off"
+            value="{{ form.get('publish_year', '') }}"
+            aria-describedby="bookYearError"
+            {% if errors.get("publish_year") %}aria-invalid="true"{% endif %}
+        >
+        {{ error_text("bookYear", errors, "publish_year") }}
+    </div>
 
     <div class="form-group">
         <label for="bookPrice">Price</label>
@@ -81,6 +117,9 @@
         </select>
         {{ error_text("bookAuthor", errors, "author_id") }}
     </div>
+
+    {{ choice_field("bookPublisher", "publisher_id", "Publisher", "Choose a publisher", publishers, "publisher_id", errors, form.get("publisher_id", "")) }}
+    {{ choice_field("bookCategory", "category_id", "Category", "Choose a category", categories, "category_id", errors, form.get("category_id", "")) }}
 
     {{ image_field("bookCover", "cover", "Cover", errors, current_cover_url, "Remove the current cover") }}
 

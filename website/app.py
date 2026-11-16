@@ -1,10 +1,13 @@
 import os
 import re
+import textwrap
 import uuid
-from decimal import Decimal
+from datetime import date
+from decimal import Decimal, InvalidOperation
 from functools import wraps
 
 import bcrypt
+import mysql.connector
 import pymysql
 from dotenv import load_dotenv
 from flask import (
@@ -53,6 +56,39 @@ def get_library_db():
     if "library_db" not in g:
         g.library_db = connect(os.environ.get("LIBRARY_DB_NAME", "library"))
     return g.library_db
+
+
+def run_prepared(sql, params):
+    """Bonus (F2.1): a real server-side prepared statement.
+
+    The SQL text has ? placeholders and is sent to MySQL on its own
+    (COM_STMT_PREPARE); the values are sent afterwards, separately, in the
+    binary protocol (COM_STMT_EXECUTE). What the user typed is never part of
+    the SQL text, so it can only ever be a value.
+    """
+    connection = mysql.connector.connect(
+        host=os.environ.get("DB_HOST", "localhost"),
+        port=int(os.environ.get("DB_PORT", 3306)),
+        user=os.environ["DB_USER"],
+        password=os.environ.get("DB_PASSWORD", ""),
+        database=os.environ.get("LIBRARY_DB_NAME", "library"),
+        charset="utf8mb4",
+        use_pure=True,
+    )
+    try:
+        cursor = connection.cursor(prepared=True)
+        cursor.execute(sql, params)
+        columns = cursor.column_names
+        rows = []
+        for row in cursor.fetchall():
+            rows.append({
+                column: value.decode("utf-8") if isinstance(value, (bytes, bytearray)) else value
+                for column, value in zip(columns, row)
+            })
+        cursor.close()
+        return rows
+    finally:
+        connection.close()
 
 
 @app.teardown_appcontext
@@ -146,8 +182,21 @@ PRICE_PATTERN = re.compile(r"^\d+(\.\d{1,2})?$")
 MAX_PRICE = Decimal("100000000")  # DECIMAL(10,2) holds up to 99999999.99
 
 
-def validate_book(title, price, author_id, author_ids):
+YEAR_PATTERN = re.compile(r"^\d{1,4}$")
+MIN_YEAR = 1000
+
+# The three lists of a book form: field name -> (label, "the ... " for the message).
+BOOK_CHOICES = {
+    "author_id": "author",
+    "publisher_id": "publisher",
+    "category_id": "category",
+}
+
+
+def validate_book(form, choice_ids):
+    """form: the typed values. choice_ids: {"author_id": {1, 2, ...}, "publisher_id": ..., ...}"""
     errors = {}
+    title, price, year = form["title"], form["price"], form["publish_year"]
 
     if title == "":
         errors["title"] = "Title is required"
@@ -163,10 +212,20 @@ def validate_book(title, price, author_id, author_ids):
     elif Decimal(price) >= MAX_PRICE:
         errors["price"] = "Price is too large (99999999.99 at most)"
 
-    if author_id == "":
-        errors["author_id"] = "Author is required"
-    elif not author_id.isdigit() or int(author_id) not in author_ids:
-        errors["author_id"] = "Choose an existing author"
+    this_year = date.today().year
+    if year == "":
+        errors["publish_year"] = "Year is required"
+    elif not YEAR_PATTERN.match(year):
+        errors["publish_year"] = "Enter a valid year, like 1956"
+    elif not MIN_YEAR <= int(year) <= this_year:
+        errors["publish_year"] = f"Year must be between {MIN_YEAR} and {this_year}"
+
+    for key, word in BOOK_CHOICES.items():
+        value = form[key]
+        if value == "":
+            errors[key] = f"{word.capitalize()} is required"
+        elif not value.isdigit() or int(value) not in choice_ids[key]:
+            errors[key] = f"Choose an existing {word}"
 
     return errors
 
@@ -415,6 +474,7 @@ def layout_context(active, view="books"):
         "name": session["name"],
         "todos_href": list_url(),
         "library_href": library_url(view),
+        "explore_href": url_for("explore"),
     }
 
 
@@ -461,10 +521,42 @@ def fetch_authors():
         return cur.fetchall()
 
 
+def fetch_publishers():
+    with get_library_db().cursor() as cur:
+        cur.execute("SELECT publisher_id, name, country FROM publisher ORDER BY name")
+        return cur.fetchall()
+
+
+def fetch_categories():
+    with get_library_db().cursor() as cur:
+        cur.execute("SELECT category_id, name FROM category ORDER BY name")
+        return cur.fetchall()
+
+
+def book_choices():
+    """The lists of the book form: authors, publishers, categories."""
+    return {
+        "authors": fetch_authors(),
+        "publishers": fetch_publishers(),
+        "categories": fetch_categories(),
+    }
+
+
+def choice_ids(choices):
+    return {
+        "author_id": {row["author_id"] for row in choices["authors"]},
+        "publisher_id": {row["publisher_id"] for row in choices["publishers"]},
+        "category_id": {row["category_id"] for row in choices["categories"]},
+    }
+
+
 def load_library():
     authors = fetch_authors()
     with get_library_db().cursor() as cur:
-        cur.execute("SELECT book_id, title, price, author_id, cover FROM book ORDER BY book_id")
+        cur.execute(
+            "SELECT book_id, title, price, publish_year, author_id, cover "
+            "FROM book ORDER BY book_id"
+        )
         books = cur.fetchall()
 
     # No JOIN needed: the author names and the book counts are matched here.
@@ -476,7 +568,12 @@ def load_library():
     for author in authors:
         author["book_count"] = counts.get(author["author_id"], 0)
 
-    return {"books": books, "authors": authors}
+    return {
+        "books": books,
+        "authors": authors,
+        "publishers": fetch_publishers(),
+        "categories": fetch_categories(),
+    }
 
 
 def render_app(active, view=None, edit_error=None, **extra):
@@ -582,29 +679,35 @@ def delete_todo(todo_id):
 # Library: books (F2.2 add, F2.3 edit, F2.4 remove)
 # ---------------------------------------------------------------
 
+BOOK_FIELDS = ("title", "price", "publish_year", "author_id", "publisher_id", "category_id")
+
+
 def read_book_form():
-    return {
-        "title": request.form.get("title", "").strip(),
-        "price": request.form.get("price", "").strip(),
-        "author_id": request.form.get("author_id", "").strip(),
-    }
+    return {name: request.form.get(name, "").strip() for name in BOOK_FIELDS}
 
 
 def fetch_book(book_id):
     with get_library_db().cursor() as cur:
         cur.execute(
-            "SELECT book_id, title, price, author_id, cover FROM book WHERE book_id = %s",
+            "SELECT book_id, title, price, publish_year, author_id, publisher_id, "
+            "category_id, cover FROM book WHERE book_id = %s",
             (book_id,),
         )
         return cur.fetchone()
+
+
+def foreign_key_errors(form):
+    """After MySQL refused a book (1452: a list value was removed meanwhile),
+    find which one is missing now."""
+    errors = validate_book(form, choice_ids(book_choices()))
+    return errors or {"author_id": "Choose an existing author"}
 
 
 @app.route("/books/add", methods=["POST"])
 @login_required
 def add_book():
     form = read_book_form()
-    author_ids = {author["author_id"] for author in fetch_authors()}
-    errors = validate_book(form["title"], form["price"], form["author_id"], author_ids)
+    errors = validate_book(form, choice_ids(book_choices()))
     image, image_error = read_image("cover")
     if image_error:
         errors["cover"] = image_error
@@ -617,16 +720,18 @@ def add_book():
     try:
         with db.cursor() as cur:
             cur.execute(
-                "INSERT INTO book (title, price, author_id, cover) VALUES (%s, %s, %s, %s)",
-                (form["title"], form["price"], form["author_id"], cover),
+                "INSERT INTO book (title, price, publish_year, author_id, publisher_id, "
+                "category_id, cover) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (form["title"], form["price"], form["publish_year"], form["author_id"],
+                 form["publisher_id"], form["category_id"], cover),
             )
         db.commit()
     except pymysql.err.IntegrityError as error:
         db.rollback()
         delete_image("books", cover)
-        if error.args[0] != 1452:  # 1452 = the author does not exist (foreign key)
+        if error.args[0] != 1452:  # 1452 = a parent row does not exist (foreign key)
             raise
-        errors["author_id"] = "Choose an existing author"
+        errors = foreign_key_errors(form)
         return render_app("library", view="books", book_errors=errors, book_form=form)
 
     flash(f"Added “{form['title']}”")
@@ -639,29 +744,25 @@ def edit_book(book_id):
     book = fetch_book(book_id)
     if book is None:
         abort(404)
-    authors = fetch_authors()
+    choices = book_choices()
 
     if request.method == "GET":
-        form = {
-            "title": book["title"],
-            "price": f"{book['price']:.2f}",
-            "author_id": str(book["author_id"]),
-        }
+        form = {name: str(book[name]) for name in BOOK_FIELDS}
+        form["price"] = f"{book['price']:.2f}"
         return render_template(
-            "book_edit.html", book=book, form=form, errors={}, authors=authors,
+            "book_edit.html", book=book, form=form, errors={}, **choices,
             **layout_context("library"),
         )
 
     form = read_book_form()
-    author_ids = {author["author_id"] for author in authors}
-    errors = validate_book(form["title"], form["price"], form["author_id"], author_ids)
+    errors = validate_book(form, choice_ids(choices))
     image, image_error = read_image("cover")
     if image_error:
         errors["cover"] = image_error
 
     if errors:
         return render_template(
-            "book_edit.html", book=book, form=form, errors=errors, authors=authors,
+            "book_edit.html", book=book, form=form, errors=errors, **choices,
             **layout_context("library"),
         )
 
@@ -675,9 +776,10 @@ def edit_book(book_id):
     try:
         with db.cursor() as cur:
             cur.execute(
-                "UPDATE book SET title = %s, price = %s, author_id = %s, cover = %s "
-                "WHERE book_id = %s",
-                (form["title"], form["price"], form["author_id"], cover, book_id),
+                "UPDATE book SET title = %s, price = %s, publish_year = %s, author_id = %s, "
+                "publisher_id = %s, category_id = %s, cover = %s WHERE book_id = %s",
+                (form["title"], form["price"], form["publish_year"], form["author_id"],
+                 form["publisher_id"], form["category_id"], cover, book_id),
             )
         db.commit()
     except pymysql.err.IntegrityError as error:
@@ -686,10 +788,9 @@ def edit_book(book_id):
             delete_image("books", cover)
         if error.args[0] != 1452:
             raise
-        errors["author_id"] = "Choose an existing author"
         return render_template(
-            "book_edit.html", book=book, form=form, errors=errors, authors=authors,
-            **layout_context("library"),
+            "book_edit.html", book=book, form=form, errors=foreign_key_errors(form),
+            **book_choices(), **layout_context("library"),
         )
 
     if cover != book["cover"]:
@@ -823,6 +924,328 @@ def delete_author(author_id):
         books = f"{len(covers)} book" + ("" if len(covers) == 1 else "s")
         flash(f"Removed {author['name']} and {books}")
     return redirect(library_url("authors"))
+
+
+# ---------------------------------------------------------------
+# Lab 4: the Explore tab (search queries, F2.1 to F2.6).
+# The SQL here is the same as in problem2_Queries.sql; every page also
+# shows its SQL under "Show the SQL".
+# ---------------------------------------------------------------
+
+def sql(text):
+    """Write the queries indented in the code, show them without the indent."""
+    return textwrap.dedent(text).strip()
+
+
+EXPLORE_SECTIONS = [
+    # (address, requirement, name in the menu)
+    ("search", "F2.1", "Search"),
+    ("catalogue", "F2.2", "Catalogue"),
+    ("reports", "F2.3", "Reports"),
+    ("loans", "F2.4", "Loans"),
+    ("popular", "F2.5", "Most borrowed"),
+    ("authors", "F2.6", "Authors"),
+]
+
+# F2.1 (bonus): a prepared statement, the values go in the ? placeholders.
+SEARCH_SQL = sql("""
+    SELECT b.book_id, b.title, b.price, b.publish_year, a.name AS author, c.name AS category
+    FROM book b
+    JOIN author a   ON b.author_id = a.author_id
+    JOIN category c ON b.category_id = c.category_id
+    WHERE b.title LIKE ?
+      AND b.price BETWEEN ? AND ?
+      AND (? = 0 OR b.category_id = ?)
+    ORDER BY b.price ASC
+""")
+
+# One column of a result table: (key in the row, header, kind).
+# kind: "text", "id", "money", "number", "date".
+EXPLORE_QUERIES = {
+    "catalogue": [
+        {
+            "code": "F2.2",
+            "title": "All the books",
+            "text": "Every book with the names of its author, publisher and category instead of the ids (three JOINs).",
+            "sql": sql("""
+                SELECT b.book_id, b.title, b.price, b.publish_year,
+                       a.name AS author, p.name AS publisher, c.name AS category
+                FROM book b
+                JOIN author a    ON b.author_id = a.author_id
+                JOIN publisher p ON b.publisher_id = p.publisher_id
+                JOIN category c  ON b.category_id = c.category_id
+                ORDER BY b.title
+            """),
+            "columns": [
+                ("book_id", "ID", "id"), ("title", "Title", "text"), ("author", "Author", "text"),
+                ("publisher", "Publisher", "text"), ("category", "Category", "text"),
+                ("publish_year", "Year", "number"), ("price", "Price", "money"),
+            ],
+        },
+    ],
+    "reports": [
+        {
+            "code": "F2.3 (c)",
+            "title": "The whole library",
+            "text": "Aggregate functions over the whole book table (no GROUP BY: one result row).",
+            "sql": sql("""
+                SELECT COUNT(*) AS books, SUM(price) AS total_price, MIN(price) AS smallest_price,
+                       MAX(price) AS largest_price
+                FROM book
+            """),
+            "style": "stats",
+            "columns": [
+                ("books", "Books", "number"), ("total_price", "Total price", "money"),
+                ("smallest_price", "Smallest price", "money"), ("largest_price", "Largest price", "money"),
+            ],
+        },
+        {
+            "code": "F2.3 (a)",
+            "title": "Books per category",
+            "text": "The number of books and the average price of each category (GROUP BY).",
+            "sql": sql("""
+                SELECT c.name AS category, COUNT(*) AS books, ROUND(AVG(b.price), 2) AS average_price
+                FROM book b
+                JOIN category c ON b.category_id = c.category_id
+                GROUP BY c.category_id, c.name
+                ORDER BY c.name
+            """),
+            "columns": [
+                ("category", "Category", "text"), ("books", "Books", "number"),
+                ("average_price", "Average price", "money"),
+            ],
+        },
+        {
+            "code": "F2.3 (b)",
+            "title": "Authors with at least 2 books",
+            "text": "The groups of one author are kept only when they have 2 books or more (HAVING).",
+            "sql": sql("""
+                SELECT a.author_id, a.name, COUNT(*) AS books
+                FROM author a
+                JOIN book b ON b.author_id = a.author_id
+                GROUP BY a.author_id, a.name
+                HAVING COUNT(*) >= 2
+                ORDER BY books DESC, a.name
+            """),
+            "columns": [
+                ("author_id", "ID", "id"), ("name", "Author", "text"), ("books", "Books", "number"),
+            ],
+        },
+    ],
+    "loans": [
+        {
+            "code": "F2.4 (a)",
+            "title": "Loans not returned yet",
+            "text": "The loans whose return_date IS NULL, with the book title and the member name.",
+            "sql": sql("""
+                SELECT l.loan_id, b.title, m.name AS member, l.loan_date
+                FROM loan l
+                JOIN book b   ON l.book_id = b.book_id
+                JOIN member m ON l.member_id = m.member_id
+                WHERE l.return_date IS NULL
+                ORDER BY l.loan_date
+            """),
+            "columns": [
+                ("loan_id", "Loan", "id"), ("title", "Book", "text"), ("member", "Member", "text"),
+                ("loan_date", "Borrowed on", "date"),
+            ],
+        },
+        {
+            "code": "F2.4 (b)",
+            "title": "Members who never borrowed a book",
+            "text": "LEFT JOIN keeps every member; the ones with no loan have NULL in the loan columns.",
+            "sql": sql("""
+                SELECT m.member_id, m.name, m.email, m.join_date
+                FROM member m
+                LEFT JOIN loan l ON l.member_id = m.member_id
+                WHERE l.loan_id IS NULL
+                ORDER BY m.name
+            """),
+            "columns": [
+                ("member_id", "ID", "id"), ("name", "Member", "text"), ("email", "Email", "text"),
+                ("join_date", "Joined on", "date"),
+            ],
+        },
+        {
+            "code": "F2.4 (c)",
+            "title": "Books that were never borrowed",
+            "text": "The same idea for the books: LEFT JOIN loan, then keep the rows with no loan.",
+            "sql": sql("""
+                SELECT b.book_id, b.title, b.price
+                FROM book b
+                LEFT JOIN loan l ON l.book_id = b.book_id
+                WHERE l.loan_id IS NULL
+                ORDER BY b.title
+            """),
+            "columns": [
+                ("book_id", "ID", "id"), ("title", "Title", "text"), ("price", "Price", "money"),
+            ],
+        },
+    ],
+    "popular": [
+        {
+            "code": "F2.5",
+            "title": "The member with the most loans",
+            "text": "Group the loans by member, sort by the count, keep the first row (LIMIT 1).",
+            "sql": sql("""
+                SELECT m.member_id, m.name, COUNT(*) AS loans
+                FROM loan l
+                JOIN member m ON l.member_id = m.member_id
+                GROUP BY m.member_id, m.name
+                ORDER BY loans DESC, m.name
+                LIMIT 1
+            """),
+            "style": "stats",
+            "columns": [("name", "Member", "text"), ("loans", "Loans", "number")],
+        },
+        {
+            "code": "F2.5",
+            "title": "The 3 most borrowed books",
+            "text": "Group the loans by book, sort by the count, keep the first 3 rows (LIMIT 3).",
+            "sql": sql("""
+                SELECT b.book_id, b.title, COUNT(*) AS loans
+                FROM loan l
+                JOIN book b ON l.book_id = b.book_id
+                GROUP BY b.book_id, b.title
+                ORDER BY loans DESC, b.title
+                LIMIT 3
+            """),
+            "style": "ranked",
+            "columns": [
+                ("book_id", "ID", "id"), ("title", "Title", "text"), ("loans", "Loans", "number"),
+            ],
+        },
+    ],
+    "authors": [
+        {
+            "code": "F2.6 (a)",
+            "title": "Every author and the number of books",
+            "text": "LEFT JOIN keeps the authors with no book; COUNT(b.book_id) gives them 0.",
+            "sql": sql("""
+                SELECT a.author_id, a.name, a.country, COUNT(b.book_id) AS books
+                FROM author a
+                LEFT JOIN book b ON b.author_id = a.author_id
+                GROUP BY a.author_id, a.name, a.country
+                ORDER BY books DESC, a.name
+            """),
+            "columns": [
+                ("author_id", "ID", "id"), ("name", "Author", "text"), ("country", "Country", "text"),
+                ("books", "Books", "number"),
+            ],
+        },
+        {
+            "code": "F2.6 (b)",
+            "title": "Author and publisher from the same country",
+            "text": "Join each book with its author and its publisher, keep the rows where the two countries are equal.",
+            "sql": sql("""
+                SELECT b.book_id, b.title, a.name AS author, p.name AS publisher, a.country
+                FROM book b
+                JOIN author a    ON b.author_id = a.author_id
+                JOIN publisher p ON b.publisher_id = p.publisher_id
+                WHERE a.country = p.country
+                ORDER BY b.title
+            """),
+            "columns": [
+                ("book_id", "ID", "id"), ("title", "Title", "text"), ("author", "Author", "text"),
+                ("publisher", "Publisher", "text"), ("country", "Country", "text"),
+            ],
+        },
+    ],
+}
+
+
+def run_queries(section):
+    blocks = []
+    with get_library_db().cursor() as cur:
+        for query in EXPLORE_QUERIES[section]:
+            cur.execute(query["sql"])
+            blocks.append(dict(query, rows=cur.fetchall()))
+    return blocks
+
+
+def read_price(raw, label, errors, key):
+    """An optional price of the search form: None when empty."""
+    if raw == "":
+        return None
+    if raw.startswith("-"):
+        errors[key] = f"The {label} price cannot be negative"
+    elif not PRICE_PATTERN.match(raw):
+        errors[key] = "Enter a valid price, like 15 or 19.99"
+    else:
+        try:
+            value = Decimal(raw)
+        except InvalidOperation:
+            value = None
+        if value is not None and value < MAX_PRICE:
+            return value
+        errors[key] = "Price is too large (99999999.99 at most)"
+    return None
+
+
+def search_books():
+    """F2.1: read the form (from the address, GET), check it, run the search."""
+    form = {
+        "q": request.args.get("q", "").strip(),
+        "min_price": request.args.get("min_price", "").strip(),
+        "max_price": request.args.get("max_price", "").strip(),
+        "category_id": request.args.get("category_id", "").strip(),
+    }
+    categories = fetch_categories()
+    errors = {}
+
+    if len(form["q"]) > 200:
+        errors["q"] = "The keyword is too long (200 characters at most)"
+
+    low = read_price(form["min_price"], "minimum", errors, "min_price")
+    high = read_price(form["max_price"], "maximum", errors, "max_price")
+    if low is not None and high is not None and low > high:
+        errors["max_price"] = "The maximum must be at least the minimum"
+
+    category = 0  # 0 = all the categories
+    if form["category_id"] != "":
+        ids = {row["category_id"] for row in categories}
+        if form["category_id"].isdigit() and int(form["category_id"]) in ids:
+            category = int(form["category_id"])
+        else:
+            errors["category_id"] = "Choose an existing category"
+
+    results = None
+    if not errors:
+        # % and _ are wildcards of LIKE: a typed "%" must only match a "%".
+        keyword = form["q"].replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        params = (
+            f"%{keyword}%",
+            low if low is not None else Decimal("0"),
+            high if high is not None else MAX_PRICE - Decimal("0.01"),
+            category,
+            category,
+        )
+        results = run_prepared(SEARCH_SQL, params)
+
+    return {
+        "form": form,
+        "errors": errors,
+        "categories": categories,
+        "results": results,
+        "searched": any(form.values()),
+        "search_sql": SEARCH_SQL,
+    }
+
+
+@app.route("/explore")
+@app.route("/explore/<section>")
+@login_required
+def explore(section="search"):
+    if section not in {key for key, _code, _name in EXPLORE_SECTIONS}:
+        abort(404)
+
+    context = layout_context("explore")
+    context.update(section=section, sections=EXPLORE_SECTIONS)
+    if section == "search":
+        context.update(search_books())
+    else:
+        context["blocks"] = run_queries(section)
+    return render_template("explore.html", **context)
 
 
 # ---------------------------------------------------------------

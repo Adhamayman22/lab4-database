@@ -1420,3 +1420,281 @@ a.btn {
         gap: 8px;
     }
 }
+
+/* =============================================================
+   Lab 4: the Explore tab (search and reports)
+   ============================================================= */
+
+/* Three main tabs: the pill is a third of the bar */
+.tabs-3 .tabs-indicator {
+    width: calc((100% - 10px) / 3);
+}
+
+.tabs-3[data-active="explore"] .tabs-indicator {
+    transform: translateX(200%);
+}
+
+/* The menu of the pages F2.1 ... F2.6 */
+.chip-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 26px;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px 7px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--input-background);
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.chip:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+.chip:focus-visible {
+    outline: 3px solid var(--accent-ring);
+    outline-offset: 2px;
+}
+
+.chip-code {
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--card-background);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.3px;
+}
+
+.chip.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.chip.active .chip-code {
+    background: rgba(255, 255, 255, 0.22);
+    color: inherit;
+}
+
+/* One query and its result */
+.result-block + .result-block {
+    margin-top: 34px;
+    padding-top: 30px;
+    border-top: 1px solid var(--border);
+}
+
+.result-head {
+    margin-bottom: 16px;
+}
+
+.req-badge {
+    display: inline-block;
+    margin-bottom: 8px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--accent-ring);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.result-title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+}
+
+.result-text {
+    margin-top: 4px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.data-table th.num,
+.data-table td.num {
+    text-align: right;
+}
+
+.data-table td.strong {
+    font-weight: 600;
+}
+
+.row-count {
+    margin-top: 10px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+/* Big numbers (one-row results) */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--input-background);
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+/* 1st, 2nd, 3rd of the most borrowed books */
+.rank {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--input-background);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.rank-1 {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+/* "Show the SQL" */
+.sql-box {
+    margin-top: 16px;
+}
+
+.sql-box > summary {
+    display: inline-block;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+
+.sql-box > summary::-webkit-details-marker {
+    display: none;
+}
+
+.sql-box > summary::before {
+    content: "\25B8";
+    display: inline-block;
+    margin-right: 6px;
+    transition: transform 0.2s ease;
+}
+
+.sql-box[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.sql-box pre {
+    margin-top: 10px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--input-background);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.sql-box code,
+.sql-note code {
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+.sql-note {
+    margin-top: 10px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+/* The search form of F2.1: one row on a computer */
+.search-books {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.search-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.4fr;
+    column-gap: 14px;
+}
+
+@media (max-width: 640px) {
+    .search-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .search-grid .span-2 {
+        grid-column: span 2;
+    }
+
+    /* the Explore tables have no picture column */
+    .plain-table tr {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .plain-table td {
+        grid-column: 1;
+    }
+
+    .data-table th.num,
+    .data-table td.num {
+        text-align: left;
+    }
+
+    .stat-value {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 480px) {
+    .tabs-3 .tab {
+        gap: 6px;
+        font-size: 14px;
+    }
+
+    .tabs-3 .tab-icon {
+        width: 18px;
+        height: 18px;
+    }
+}

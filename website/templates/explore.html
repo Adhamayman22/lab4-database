@@ -1,0 +1,213 @@
+{% extends "_app_layout.html" %}
+
+{#
+    Lab 4, Problem 2: the search pages (F2.1 to F2.6).
+    One page with a small menu; each section runs the queries of
+    problem2_Queries.sql and can show its SQL.
+#}
+
+{% block title %}Explore{% endblock %}
+
+
+{% macro cell(value, kind) %}
+{%- if value is none -%}<span class="muted">&mdash;</span>
+{%- elif kind == "id" -%}<span class="id-pill">#{{ value }}</span>
+{%- elif kind == "money" -%}{{ "%.2f"|format(value) }}
+{%- elif kind == "date" -%}{{ value.strftime("%d %b %Y") }}
+{%- else -%}{{ value }}
+{%- endif -%}
+{% endmacro %}
+
+
+{% macro sql_box(text) %}
+<details class="sql-box">
+    <summary>Show the SQL</summary>
+    <pre><code>{{ text }}</code></pre>
+</details>
+{% endmacro %}
+
+
+{% macro result_block(block) %}
+<section class="result-block">
+    <header class="result-head">
+        <span class="req-badge">{{ block.code }}</span>
+        <h3 class="result-title">{{ block.title }}</h3>
+        <p class="result-text">{{ block.text }}</p>
+    </header>
+
+    {% if not block.rows %}
+    <div class="empty-state">
+        <p class="empty-title">No rows</p>
+        <p>The query returned an empty result.</p>
+    </div>
+
+    {% elif block.style == "stats" %}
+    <div class="stat-grid">
+        {% for row in block.rows %}
+            {% for key, label, kind in block.columns %}
+            <div class="stat">
+                <span class="stat-label">{{ label }}</span>
+                <span class="stat-value">{{ cell(row[key], kind) }}</span>
+            </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="table-wrap">
+        <table class="data-table plain-table">
+            <thead>
+                <tr>
+                    {% if block.style == "ranked" %}<th scope="col">Rank</th>{% endif %}
+                    {% for key, label, kind in block.columns %}
+                    <th scope="col" {% if kind in ("money", "number") %}class="num"{% endif %}>{{ label }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in block.rows %}
+                <tr>
+                    {% if block.style == "ranked" %}
+                    <td data-label="Rank"><span class="rank rank-{{ loop.index }}">{{ loop.index }}</span></td>
+                    {% endif %}
+                    {% for key, label, kind in block.columns %}
+                    <td data-label="{{ label }}" class="{% if kind in ('money', 'number') %}cell-number num{% endif %}{% if kind == 'text' and loop.index <= 2 %} strong{% endif %}">{{ cell(row[key], kind) }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="row-count">{{ block.rows|length }} row{{ "" if block.rows|length == 1 else "s" }}</p>
+    {% endif %}
+
+    {{ sql_box(block.sql) }}
+</section>
+{% endmacro %}
+
+
+{% block content %}
+<section class="card card-wide explore-card">
+
+    <div class="panel-head">
+        <div>
+            <h2 class="panel-title">Explore the library</h2>
+            <p class="panel-sub">Search, reports and loans: every page is one SQL query on the library database.</p>
+        </div>
+    </div>
+
+    <nav class="chip-nav" aria-label="Explore pages">
+        {% for key, code, label in sections %}
+        <a class="chip{% if key == section %} active{% endif %}" href="{{ url_for('explore', section=key) }}"
+           {% if key == section %}aria-current="page"{% endif %}>
+            <span class="chip-code">{{ code }}</span>
+            <span>{{ label }}</span>
+        </a>
+        {% endfor %}
+    </nav>
+
+
+    {% if section == "search" %}
+    {# ======================= F2.1 Search books ======================= #}
+    <section class="result-block">
+        <header class="result-head">
+            <span class="req-badge">F2.1</span>
+            <h3 class="result-title">Search books</h3>
+            <p class="result-text">A title keyword (LIKE), a price range (BETWEEN, both ends included) and a category. Leave a field empty to ignore it. The cheapest books come first.</p>
+        </header>
+
+        <form class="entity-form search-books" method="get" action="{{ url_for('explore', section='search') }}" novalidate>
+            <div class="search-grid">
+                <div class="form-group span-2">
+                    <label for="searchKeyword">Title keyword</label>
+                    <input type="search" id="searchKeyword" name="q" placeholder="e.g. the" autocomplete="off"
+                           value="{{ form.q }}" aria-describedby="searchKeywordError"
+                           {% if errors.q %}aria-invalid="true"{% endif %}>
+                    <p class="error-message{% if errors.q %} visible{% endif %}" id="searchKeywordError" aria-live="polite">{{ errors.q }}</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="searchMin">Minimum price</label>
+                    <input type="text" id="searchMin" name="min_price" inputmode="decimal" placeholder="e.g. 15"
+                           autocomplete="off" value="{{ form.min_price }}" aria-describedby="searchMinError"
+                           {% if errors.min_price %}aria-invalid="true"{% endif %}>
+                    <p class="error-message{% if errors.min_price %} visible{% endif %}" id="searchMinError" aria-live="polite">{{ errors.min_price }}</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="searchMax">Maximum price</label>
+                    <input type="text" id="searchMax" name="max_price" inputmode="decimal" placeholder="e.g. 20"
+                           autocomplete="off" value="{{ form.max_price }}" aria-describedby="searchMaxError"
+                           {% if errors.max_price %}aria-invalid="true"{% endif %}>
+                    <p class="error-message{% if errors.max_price %} visible{% endif %}" id="searchMaxError" aria-live="polite">{{ errors.max_price }}</p>
+                </div>
+
+                <div class="form-group span-2">
+                    <label for="searchCategory">Category</label>
+                    <select id="searchCategory" name="category_id" aria-describedby="searchCategoryError"
+                            {% if errors.category_id %}aria-invalid="true"{% endif %}>
+                        <option value="">All categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.category_id }}" {% if form.category_id == category.category_id|string %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="error-message{% if errors.category_id %} visible{% endif %}" id="searchCategoryError" aria-live="polite">{{ errors.category_id }}</p>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                {% if searched %}
+                <a class="btn btn-outline" href="{{ url_for('explore', section='search') }}">Clear</a>
+                {% endif %}
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </form>
+
+        {% if results is not none %}
+            {% if results %}
+            <div class="table-wrap">
+                <table class="data-table plain-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Title</th>
+                            <th scope="col">Category</th>
+                            <th scope="col" class="num">Year</th>
+                            <th scope="col" class="num">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in results %}
+                        <tr>
+                            <td class="strong">
+                                <span class="row-title">{{ book.title }}</span>
+                                <span class="row-sub">{{ book.author }}</span>
+                            </td>
+                            <td data-label="Category">{{ book.category }}</td>
+                            <td data-label="Year" class="cell-number num">{{ book.publish_year }}</td>
+                            <td data-label="Price" class="cell-number num">{{ "%.2f"|format(book.price) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="row-count">{{ results|length }} book{{ "" if results|length == 1 else "s" }} found</p>
+            {% else %}
+            <div class="empty-state">
+                <p class="empty-title">No books match</p>
+                <p>Try a shorter keyword, a wider price range or all categories.</p>
+            </div>
+            {% endif %}
+        {% endif %}
+
+        {{ sql_box(search_sql) }}
+        <p class="sql-note">Bonus: this query is a <strong>prepared statement</strong>. The SQL with its <code>?</code> placeholders is sent to MySQL first, then the values you typed are sent separately, so they are never part of the SQL text.</p>
+    </section>
+
+    {% else %}
+        {% for block in blocks %}
+            {{ result_block(block) }}
+        {% endfor %}
+    {% endif %}
+
+</section>
+{% endblock %}
