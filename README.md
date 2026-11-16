@@ -43,7 +43,7 @@ You need **Python 3.10+** and **MySQL 8** with its client `mysql` (it comes with
 
 1. **Get the code**
    ```
-   git clone https://github.com/Adhamayman22/lab4-2204145-2204157.git
+   git clone https://github.com/Adhamayman22/lab4-database.git lab4-2204145-2204157
    cd lab4-2204145-2204157
    ```
 
